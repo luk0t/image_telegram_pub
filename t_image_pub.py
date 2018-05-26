@@ -1,4 +1,5 @@
 import os
+from typing import Type
 import peewee as pw
 import telegram
 import settings
@@ -20,12 +21,7 @@ class Image(pw.Model):
         database = DB
 
 
-def init_base():
-    DB.connect()
-    DB.create_tables([Image])
-
-
-def add_images(path: str, image: Image)-> None:
+def add_images(path: str, image: Type[Image])-> None:
     """ Add new images to database
     :param path: path to directory with images files
     :param image: peewee image class
@@ -34,10 +30,13 @@ def add_images(path: str, image: Image)-> None:
     for file in os.listdir(path):
         *name, ext = file.split('.')
         if ext.lower() in IMAGES:
-            image.create(image=file)
+            try:
+                image.create(image=file)
+            except pw.IntegrityError:
+                pass
 
 
-def clean_images_published(path: str, image: Image)-> None:
+def clean_images_published(path: str, image: Type[Image])-> None:
     """Delete already published images
     :param path: path to directory with images
     :param image: Image class of db
@@ -45,10 +44,16 @@ def clean_images_published(path: str, image: Image)-> None:
     """
     for record in image.filter(status=image_statuses.published):
         full_path = os.path.join(path, record.image)
-        os.remove(full_path)
+        try:
+            os.remove(full_path)
+        except FileNotFoundError:
+            pass
 
 
-def public_image(token: str, path: str, channel: str, image: Image)-> None:
+def public_image(token: str,
+                 path: str,
+                 channel: str,
+                 image: Type[Image])-> None:
     """ Public one image in telegram channel
     :param token: api token for telegram bot
     :param path: path to directory with images
@@ -58,12 +63,13 @@ def public_image(token: str, path: str, channel: str, image: Image)-> None:
     """
     bot = telegram.Bot(token=token)
     image_file = image.filter(status=image_statuses.not_published).limit(1)
-    full_path = os.path.join(path, image_file.image)
+    full_path = os.path.join(path, image_file[0].image)
     try:
-        bot.send_photo(chat_id=channel, photo=open(full_path, 'rb'))
+        with open(full_path, 'rb') as photo:
+            bot.send_photo(chat_id=channel, photo=photo)
     except:
+        print('!3!!!!!!!!!!!!!!!')
         exit(1)
     else:
-        image_file.image.status = statuses.published
-        image_file.save()
+        image_file[0].status = statuses.published
 
