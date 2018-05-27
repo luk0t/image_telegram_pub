@@ -111,7 +111,10 @@ def main(argv):
                        action='store_true')
     args = parser.parse_args(argv)
     if args.public:
-        public_image(settings.TOKEN, settings.IMAGES_PATH, Image)
+        public_image(settings.TOKEN,
+                     settings.IMAGES_PATH,
+                     settings.CHANNEL,
+                     Image)
     elif args.clean:
         clean_images_published(settings.IMAGES_PATH, Image)
     elif args.a:
@@ -120,4 +123,3 @@ def main(argv):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-
