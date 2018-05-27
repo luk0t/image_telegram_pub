@@ -105,14 +105,10 @@ class TestPublicImage(unittest.TestCase):
         self.db.create_tables([self.image])
 
     def test_public_image(self):
-        print(os.listdir(path))
         test_path = os.path.dirname(os.path.abspath(__file__))
         files_path = os.path.join(test_path, images_dir)
-        print(files_path)
-        print(os.listdir(files_path))
         for file in os.listdir(files_path):
             *name, ext = file.split('.')
-            print(ext)
             if ext.lower() in t_image_pub.IMAGES:
                 try:
                     self.image.create(image=file)
@@ -122,5 +118,54 @@ class TestPublicImage(unittest.TestCase):
                                  files_path,
                                  settings.CHANNEL,
                                  self.image)
+        published = self.image.filter(image='1.jpg')
+        for im in published:
+            self.assertEqual(im.status, t_image_pub.image_statuses.published)
+
+    def test_not_file(self):
+        test_path = os.path.dirname(os.path.abspath(__file__))
+        files_path = os.path.join(test_path, images_dir)
+        try:
+            self.image.create(image='4.jpg')
+        except pw.IntegrityError:
+            pass
+        with self.assertRaises(SystemExit):
+            t_image_pub.public_image(settings.TOKEN,
+                                     files_path,
+                                     settings.CHANNEL,
+                                     self.image)
+        published = self.image.filter(image='4.jpg')
+        for im in published:
+            self.assertEqual(im.status, t_image_pub.image_statuses.not_found)
+
+    def test_not_images_in_db(self):
+        test_path = os.path.dirname(os.path.abspath(__file__))
+        files_path = os.path.join(test_path, images_dir)
+        with self.assertRaises(SystemExit):
+            t_image_pub.public_image(settings.TOKEN,
+                                     files_path,
+                                     settings.CHANNEL,
+                                     self.image)
+
+    def test_not_image_file(self):
+        test_path = os.path.dirname(os.path.abspath(__file__))
+        files_path = os.path.join(test_path, images_dir)
+        file = os.path.join(files_path, '4.jpg')
+        with open(os.path.join(file), 'w') as f:
+            f.write('Not jpeg file')
+        try:
+            self.image.create(image='4.jpg')
+        except pw.IntegrityError:
+            pass
+        with self.assertRaises(SystemExit):
+            t_image_pub.public_image(settings.TOKEN,
+                                     files_path,
+                                     settings.CHANNEL,
+                                     self.image)
+        published = self.image.filter(image='4.jpg')
+        for im in published:
+            self.assertEqual(im.status, t_image_pub.image_statuses.not_valid)
+
+
 if __name__ == '__main__':
     unittest.main()
