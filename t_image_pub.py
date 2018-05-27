@@ -109,6 +109,7 @@ def main(argv):
                        action='store_true')
     group.add_argument('-a', '--add', help='Add new images to database',
                        action='store_true')
+    DB.create_tables([Image])
     args = parser.parse_args(argv)
     if args.public:
         public_image(settings.TOKEN,
@@ -117,7 +118,7 @@ def main(argv):
                      Image)
     elif args.clean:
         clean_images_published(settings.IMAGES_PATH, Image)
-    elif args.a:
+    elif args.add:
         add_images(settings.IMAGES_PATH, Image)
 
 
