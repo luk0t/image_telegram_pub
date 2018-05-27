@@ -22,8 +22,10 @@ formatter = logging.Formatter('%(asctime)s %(levelname)s %(module)s  '
 sh.setFormatter(formatter)
 logger.addHandler(sh)
 
+work_path = os.path.dirname(os.path.abspath(__file__))
+
 IMAGES = {'jpg', 'jpeg', 'png'}
-DB = pw.SqliteDatabase(settings.DATABASE_NAME)
+DB = pw.SqliteDatabase(os.path.join(work_path, settings.DATABASE_NAME))
 
 
 class Image(pw.Model):
