@@ -3,3 +3,4 @@ repos:
     rev: v2.5.2  # Use the ref you want to point at
     hooks:
       - id: pylint
+        args: ['t_images_pub.py']
