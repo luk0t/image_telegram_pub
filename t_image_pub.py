@@ -1,19 +1,22 @@
+"""
+Simple telegram image publisher
+"""
+
 import os
 import argparse
 import sys
 import logging
 from typing import Type
+from collections import namedtuple
 import peewee as pw
 import telegram
-import settings
-from collections import namedtuple
 
 
-statuses = namedtuple('Statuses', ['not_published',
+Statuses = namedtuple('Statuses', ['not_published',
                                    'published',
                                    'not_found',
                                    'not_valid'])
-image_statuses = statuses._make([0, 1, 2, 4])
+image_statuses = Statuses._make([0, 1, 2, 4])
 logger = logging.getLogger(__name__)
 sh = logging.StreamHandler()
 sh.setLevel(logging.DEBUG)
@@ -25,7 +28,7 @@ logger.addHandler(sh)
 work_path = os.path.dirname(os.path.abspath(__file__))
 
 IMAGES = {'jpg', 'jpeg', 'png'}
-DB = pw.SqliteDatabase(os.path.join(work_path, settings.DATABASE_NAME))
+DB = pw.SqliteDatabase(os.path.join(work_path, os.getenv('DATABSE_NAME')))
 
 
 class Image(pw.Model):
@@ -43,7 +46,7 @@ def add_images(path: str, image: Type[Image])-> None:
     :return: None
     """
     for file in os.listdir(path):
-        *name, ext = file.split('.')
+        *_, ext = file.split('.')
         if ext.lower() in IMAGES:
             try:
                 image.create(image=file)
@@ -103,6 +106,10 @@ def public_image(token: str,
 
 
 def main(argv):
+    """
+    :param argv: main args
+    :return: None
+    """
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-p', '--public', help='Public next image to chanel',
@@ -114,14 +121,14 @@ def main(argv):
     DB.create_tables([Image])
     args = parser.parse_args(argv)
     if args.public:
-        public_image(settings.TOKEN,
-                     settings.IMAGES_PATH,
-                     settings.CHANNEL,
+        public_image(os.getenv('TOKEN'),
+                     os.getenv('IMAGE_PATH'),
+                     os.getenv('CHANNEL'),
                      Image)
     elif args.clean:
-        clean_images_published(settings.IMAGES_PATH, Image)
+        clean_images_published(os.getenv('IMAGES_PATH'), Image)
     elif args.add:
-        add_images(settings.IMAGES_PATH, Image)
+        add_images(os.getenv('IMAGES_PATH'), Image)
 
 
 if __name__ == '__main__':
