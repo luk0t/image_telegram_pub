@@ -1,1 +1,1 @@
-### simple image publisher for telegram
+### Simple image publisher for telegram
